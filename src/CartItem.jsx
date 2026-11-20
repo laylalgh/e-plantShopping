@@ -1,68 +1,53 @@
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { removeItem, updateQuantity } from './CartSlice';
-import './CartItem.css';
 
-const CartItem = ({ onContinueShopping }) => {
-  const cart = useSelector(state => state.cart.items);
+const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const unitCost = item => Number(item.cost.replace('$', ''));
+const lineTotal = item => unitCost(item) * item.quantity;
+
+export default function CartItem() {
+  const items = useSelector(state => state.cart.items);
   const dispatch = useDispatch();
+  const [checkoutMessage, setCheckoutMessage] = useState('');
+  const total = items.reduce((sum, item) => sum + lineTotal(item), 0);
 
-  // Calculate total amount for all products in the cart
-  const calculateTotalAmount = () => {
- 
-  };
-
-  const handleContinueShopping = (e) => {
-   
-  };
-
-
-
-  const handleIncrement = (item) => {
-  };
-
-  const handleDecrement = (item) => {
-   
-  };
-
-  const handleRemove = (item) => {
-  };
-
-  // Calculate total cost based on quantity for an item
-  const calculateTotalCost = (item) => {
-  };
+  function changeQuantity(item, difference) {
+    dispatch(updateQuantity({ name: item.name, quantity: item.quantity + difference }));
+  }
 
   return (
-    <div className="cart-container">
-      <h2 style={{ color: 'black' }}>Total Cart Amount: ${calculateTotalAmount()}</h2>
-      <div>
-        {cart.map(item => (
-          <div className="cart-item" key={item.name}>
-            <img className="cart-item-image" src={item.image} alt={item.name} />
-            <div className="cart-item-details">
-              <div className="cart-item-name">{item.name}</div>
-              <div className="cart-item-cost">{item.cost}</div>
-              <div className="cart-item-quantity">
-                <button className="cart-item-button cart-item-button-dec" onClick={() => handleDecrement(item)}>-</button>
-                <span className="cart-item-quantity-value">{item.quantity}</span>
-                <button className="cart-item-button cart-item-button-inc" onClick={() => handleIncrement(item)}>+</button>
+    <main className="shop-content cart-content" id="cart">
+      <h1>Shopping cart</h1>
+      {items.length === 0 && <p>Your cart is empty.</p>}
+      <div className="cart-items">
+        {items.map(item => (
+          <article className="cart-item" key={item.name}>
+            <img src={item.image} alt={item.name} />
+            <div>
+              <h2>{item.name}</h2>
+              <p>{dollars.format(unitCost(item))} each</p>
+              <div className="quantity-controls" aria-label={`${item.name} quantity`}>
+                <button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => changeQuantity(item, -1)}>−</button>
+                <span>{item.quantity}</span>
+                <button type="button" aria-label={`Increase ${item.name} quantity`} onClick={() => changeQuantity(item, 1)}>+</button>
               </div>
-              <div className="cart-item-total">Total: ${calculateTotalCost(item)}</div>
-              <button className="cart-item-delete" onClick={() => handleRemove(item)}>Delete</button>
             </div>
-          </div>
+            <div className="cart-line-total">
+              <strong>{dollars.format(lineTotal(item))}</strong>
+              <button type="button" className="remove-button" aria-label={`Delete ${item.name}`} onClick={() => dispatch(removeItem(item.name))}>Delete</button>
+            </div>
+          </article>
         ))}
       </div>
-      <div style={{ marginTop: '20px', color: 'black' }} className='total_cart_amount'></div>
-      <div className="continue_shopping_btn">
-        <button className="get-started-button" onClick={(e) => handleContinueShopping(e)}>Continue Shopping</button>
-        <br />
-        <button className="get-started-button1">Checkout</button>
+      <div className="cart-summary">
+        <p aria-live="polite">Total Cart Amount <strong>{dollars.format(total)}</strong></p>
+        <div className="summary-actions">
+          <a href="#plants" className="secondary-link">Continue Shopping</a>
+          <button type="button" disabled={!items.length} onClick={() => setCheckoutMessage('Checkout is coming soon.')}>Checkout</button>
+        </div>
+        <div role="status">{items.length > 0 && checkoutMessage}</div>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default CartItem;
-
-
+}
